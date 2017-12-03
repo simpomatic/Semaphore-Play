@@ -10,7 +10,8 @@
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "/home/luis/source/repos/Semaphore-Play/semaphore.h"
+#include <time.h> 
+#include "semaphore.h"
 using namespace std;
 
 const int MAXCHAR = 10;
@@ -18,11 +19,37 @@ const int BUFFSIZE = 4;
 pid_t* childProcesses = new pid_t[4];
 enum {GET_U, GET_V}; // set up names of my 2 semaphores
 
+inline void delay( unsigned long ms ) {
+    usleep( ms * 1000 );
+}
+
 void generateNumber_proc(SEMAPHORE &sem, char *shmBUF, int id){
-    cout << childProcesses[id] << endl;
-    ushort* semvals = sem.get_values();
-    for(int i = 0; i < 2; i++) {
-        cout << semvals[i] << endl;
+    ushort* semvals;
+    while(true) {
+        srand(time(NULL));
+        semvals = sem.getValues();
+        if(semvals[0] > 0) {
+            sem.P(GET_U);
+            int random = 1001;
+            while((random%827395609 != 0) && random > 1000) {
+                random = rand();
+            }
+            cout << "[" << id << "]: Produced the number " << random << " for int U" << endl;
+            delay(1000);
+            sem.V(GET_U);
+            delay(4000);
+        }
+        else if(semvals[1] > 0) {
+            sem.P(GET_V);
+            int random = 1001;
+            while((random%962094883 != 0) && random > 1000) {
+                random = rand();
+            }
+            cout << "[" << id << "]: Produced the number " << random << " for int V" << endl;
+            delay(1000);
+            sem.V(GET_V);
+            delay(4000);
+        }
     }
 }
 
@@ -40,6 +67,7 @@ void parent_cleanup (SEMAPHORE &sem, int shmid) {
     }
 	shmctl(shmid, IPC_RMID, NULL);	/* cleaning up */
 	sem.remove();
+    sem.~SEMAPHORE();
 } // parent_cleanup
 
 int main() {
@@ -58,11 +86,10 @@ int main() {
     //Child that will essentially fork four more children to generate numbers
     else {
         for(int k=0; k<4; k++) {
-            if(childProcesses[k] = fork()) {
-		        generateNumber_proc(sem, shmBUF, k);
-            }
+            if(childProcesses[k] = fork()) {}
             //Keeps the number child processes at bay
             else {
+                generateNumber_proc(sem, shmBUF, k);
                 break;
             }
         }

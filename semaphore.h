@@ -35,6 +35,7 @@ public:
 	// postcondition: all semaphores are initialized to zero
 	SEMAPHORE(int size);
 	~SEMAPHORE();
+	ushort* getValues();
 
 	// deallocates all semaphores created by constructor
 	// precondition: existence of SEMAPHORE object
@@ -52,6 +53,4 @@ public:
 	// postcondition: semaphore increments and process may be resumed
 	// return value: -1 denotes an error
 	int V(int semname);
-
-	ushort* get_values();
 };

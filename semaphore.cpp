@@ -2,20 +2,18 @@
 
 // simple implementation of SEMAPHORE class with some error 
 // and signal handling
-#include "/home/luis/source/repos/Semaphore-Play/semaphore.h"
-using namespace std;
+#include "semaphore.h"
 
 SEMAPHORE::SEMAPHORE(int size) {
-
 	this->size = size;
 	semid = semget(IPC_PRIVATE, size, PERMS);
 	init();
-	}
+}
 
 int SEMAPHORE::remove() {
 	semun dummy;
 	return semctl(semid, 0 /*not used*/, IPC_RMID, dummy);
-	}
+}
 
 int SEMAPHORE::P(int id){
 	int retval;
@@ -29,7 +27,15 @@ int SEMAPHORE::V(int id){
 	struct sembuf *v = &((vset+id)->sb);
 	while(((retval=semop(semid,v,1))==-1)&&(errno==EINTR));
 	return retval;
-}	
+}
+
+ushort* SEMAPHORE::getValues() {
+	semun arg;
+	ushort initv[size];
+	arg.array = initv;
+	semctl(semid, size, GETALL, arg);
+	return arg.array;
+}
 
 void SEMAPHORE::set_sembuf_p(int k, int op, int flg){
 	(pset+k)->sb.sem_num = (short) k;
@@ -59,15 +65,6 @@ int SEMAPHORE::init() {
 	}
 	arg.array = initv;
 	return semctl(semid, size, SETALL, arg);
-}
-
-ushort* SEMAPHORE::get_values(){
-	// initialize all to zero
-	semun arg;
-	ushort initv[size];
-	arg.array = initv;
-	semctl(semid, size, GETALL, arg);
-	return arg.array;
 }
 
 SEMAPHORE::~SEMAPHORE() {
