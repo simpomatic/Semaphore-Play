@@ -2,8 +2,8 @@
 
 // simple implementation of SEMAPHORE class with some error 
 // and signal handling
-
-#include "semaphore.h"
+#include "/home/luis/source/repos/Semaphore-Play/semaphore.h"
+using namespace std;
 
 SEMAPHORE::SEMAPHORE(int size) {
 
@@ -55,14 +55,22 @@ int SEMAPHORE::init() {
 	semun arg;
 	ushort initv[size];
 	for(int k=0; k<size; k++) {
-		initv[k]=0;
+		initv[k]=1;
 	}
 	arg.array = initv;
 	return semctl(semid, size, SETALL, arg);
+}
+
+ushort* SEMAPHORE::get_values(){
+	// initialize all to zero
+	semun arg;
+	ushort initv[size];
+	arg.array = initv;
+	semctl(semid, size, GETALL, arg);
+	return arg.array;
 }
 
 SEMAPHORE::~SEMAPHORE() {
 	delete pset;
 	delete vset;
 }
-
