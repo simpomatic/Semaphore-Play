@@ -26,29 +26,51 @@ inline void delay( unsigned long ms ) {
 void generateNumber_proc(SEMAPHORE &sem, char *shmBUF, int id){
     ushort* semvals;
     while(true) {
-        srand(time(NULL));
-        semvals = sem.getValues();
-        if(semvals[0] > 0) {
-            sem.P(GET_U);
-            int random = 1001;
-            while((random%827395609 != 0) && random > 1000) {
-                random = rand();
+        int turn = atoi(shmBUF);
+        if(turn == id%BUFFSIZE){
+            semvals = sem.getValues();
+            if(semvals[0] > 0) {
+                sem.P(GET_U);
+                int random = 1001;
+
+                if((turn+1) == BUFFSIZE) {
+                    turn = 48; //char value for zero
+                }
+                else {
+                    turn = id%BUFFSIZE + 1;
+                    turn += 48;
+                }
+                *(shmBUF) = (char) turn;
+
+                while((random%827395609 != 0) && random > 1000) {
+                    random = rand();
+                }
+                cout << "[" << id << "]: Produced the number " << random << " for int U" << endl;
+                delay(1000);
+                sem.V(GET_U);
+                delay(4000);
             }
-            cout << "[" << id << "]: Produced the number " << random << " for int U" << endl;
-            delay(1000);
-            sem.V(GET_U);
-            delay(4000);
-        }
-        else if(semvals[1] > 0) {
-            sem.P(GET_V);
-            int random = 1001;
-            while((random%962094883 != 0) && random > 1000) {
-                random = rand();
+            else if(semvals[1] > 0) {
+                sem.P(GET_V);
+                int random = 1001;
+
+                if((turn+1) == BUFFSIZE) {
+                    turn = 48; //char value for zero
+                }
+                else {
+                    turn = id%BUFFSIZE + 1;
+                    turn += 48;
+                }
+                *(shmBUF) = (char) turn;
+
+                while((random%962094883 != 0) && random > 1000) {
+                    random = rand();
+                }
+                cout << "[" << id << "]: Produced the number " << random << " for int V" << endl;
+                delay(1000);
+                sem.V(GET_V);
+                delay(4000);
             }
-            cout << "[" << id << "]: Produced the number " << random << " for int V" << endl;
-            delay(1000);
-            sem.V(GET_V);
-            delay(4000);
         }
     }
 }
@@ -75,9 +97,12 @@ int main() {
 	char *shmBUF;
     long childPID;
 
-	SEMAPHORE sem(2);
+    srand(time(NULL));
+	SEMAPHORE sem(2); 
 	shmid = shmget(IPC_PRIVATE, BUFFSIZE*sizeof(char), PERMS);
 	shmBUF = (char *)shmat(shmid, 0, SHM_RND);
+
+    *(shmBUF) = (char) 48;
 
     //Parent clean up
     if(fork()){
